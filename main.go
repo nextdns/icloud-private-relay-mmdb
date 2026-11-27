@@ -4,12 +4,12 @@ import (
 	"bytes"
 	"encoding/csv"
 	"log"
-	"net"
 	"net/http"
+	"net/netip"
 	"os"
 
-	"github.com/maxmind/mmdbwriter"
-	"github.com/maxmind/mmdbwriter/mmdbtype"
+	"github.com/maxmind/mmdbwriter/v2"
+	"github.com/maxmind/mmdbwriter/v2/mmdbtype"
 )
 
 const egressRanges = "https://mask-api.icloud.com/egress-ip-ranges.csv"
@@ -38,6 +38,7 @@ func main() {
 
 	writer, err := mmdbwriter.New(mmdbwriter.Options{
 		DatabaseType: "GeoIP2-Country",
+		Description:  map[string]string{"en": "Apple iCloud Private Relay egress countries"},
 		RecordSize:   24,
 	})
 	if err != nil {
@@ -46,7 +47,7 @@ func main() {
 
 	// Insert records into the MMDB writer
 	for _, record := range records {
-		_, ipNet, err := net.ParseCIDR(record[0])
+		prefix, err := netip.ParsePrefix(record[0])
 		if err != nil {
 			log.Fatalf("Failed to parse CIDR: %v", err)
 		}
@@ -57,7 +58,7 @@ func main() {
 			},
 		}
 
-		err = writer.Insert(ipNet, data)
+		err = writer.Insert(prefix, data)
 		if err != nil {
 			log.Fatalf("Failed to insert record into MMDB: %v", err)
 		}

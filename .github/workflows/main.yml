@@ -10,32 +10,30 @@ on:
       - .github/workflows/**
   schedule:
     - cron: 10 5 * * *
-    
+
 jobs:
   build:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
 
     steps:
     - name: Checkout repository
-      uses: actions/checkout@v3
+      uses: actions/checkout@v7
 
     - name: Set up Go
-      uses: actions/setup-go@v3
+      uses: actions/setup-go@v7
       with:
-        go-version: '1.22'
+        go-version: '1.27.x'
 
     - name: Compile and run main.go
       run: |
         go run .
 
-    - name: Commit generated files
+    - name: Publish changed ranges
       run: |
-        git config --global user.name 'github-actions[bot]'
-        git config --global user.email 'github-actions[bot]@users.noreply.github.com'
-        git add -u
-        git diff-index --quiet HEAD || git commit -a -m "[auto] Update generated files"
-    - name: Push changes
-      uses: ad-m/github-push-action@master
-      with:
-        github_token: ${{ secrets.GITHUB_TOKEN }}
-        branch: main
+        git diff --quiet && exit 0
+        git config user.name 'github-actions[bot]'
+        git config user.email 'github-actions[bot]@users.noreply.github.com'
+        git commit -am "[auto] Update generated files"
+        git push
